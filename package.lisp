@@ -1,8 +1,5 @@
-;(ql:quickload "optima")
-;(ql:quickload "alexandria")
-(defpackage :cl-py-generator
+(defpackage :cl-wolfram-generator
   (:use :cl
-	;:optima
 	:alexandria)
   (:export
    #:tuple
@@ -17,4 +14,4 @@
    #:try
    #:write-source
    #:run
-   #:start-python))
+   #:start-wolfram))

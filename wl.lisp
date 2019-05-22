@@ -1,14 +1,11 @@
-;(ql:quickload "optima")
-;(ql:quickload "alexandria")
-
-(in-package :cl-py-generator)
+(in-package :cl-wolfram-generator)
 (setf (readtable-case *readtable*) :invert)
 
 (defparameter *file-hashes* (make-hash-table))
 
 (defun write-source (name code &optional (dir (user-homedir-pathname))
 				 ignore-hash)
-  (let* ((fn (merge-pathnames (format nil "~a.py" name)
+  (let* ((fn (merge-pathnames (format nil "~a.m" name)
 			      dir))
 	(code-str (emit-py
 		   :clear-env t
@@ -27,8 +24,6 @@
 			  :if-does-not-exist :create)
 	 (write-sequence code-str s))
        #+nil
-
-       (sb-ext:run-program "/usr/bin/autopep8" (list "--max-line-length 80" (namestring fn)))
        (sb-ext:run-program "/usr/bin/yapf" (list (namestring fn)))))))
 
 (defun print-sufficient-digits-f64 (f)
@@ -52,13 +47,12 @@
 
 
 
-(defun emit-py (&key code (str nil) (clear-env nil) (level 0))
-  ;(format t "emit ~a ~a~%" level code)
+(defun emit-wl (&key code (str nil) (clear-env nil))
   (when clear-env
     (setf *env-functions* nil
 	  *env-macros* nil))
-  (flet ((emit (code &optional (dl 0))
-	   (emit-py :code code :clear-env nil :level (+ dl level))))
+  (flet ((emit (code)
+	   (emit-wl :code code :clear-env nil)))
     (if code
 	(if (listp code)
 	    (case (car code)
@@ -69,17 +63,14 @@
 	      (ntuple (let ((args (cdr code)))
 		       (format nil "~{~a~^, ~}" (mapcar #'emit args))))
 	      (list (let ((args (cdr code)))
-		      (format nil "[~{~a~^, ~}]" (mapcar #'emit args))))
+		      (format nil "{~{~a~^, ~}}" (mapcar #'emit args))))
               (dict (let* ((args (cdr code)))
 		      (let ((str (with-output-to-string (s)
 				   (loop for (e f) in args
 				      do
-					(format s "(~a):(~a)," (emit e) (emit f))))))
+					(format s "(~a)->(~a)," (emit e) (emit f))))))
 			(format nil "{~a}" ;; remove trailing comma
 				(subseq str 0 (- (length str) 1))))))
-	      (indent (format nil "~{~a~}~a"
-			      (loop for i below level collect "    ")
-			      (emit (cadr code))))
 	      (do (with-output-to-string (s)
 		    (format s "~{~&~a~}" (mapcar #'(lambda (x) (emit `(indent ,x) 1)) (cdr code)))))
 	      (class (destructuring-bind (name parents &rest body) (cdr code)

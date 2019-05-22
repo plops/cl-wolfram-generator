@@ -1,36 +1,35 @@
-(in-package :cl-py-generator)
+(in-package :cl-wolfram-generator)
 
-;; strace -f -s 256 -p `ps x|grep python3.5|head -n 1|cut -d " " -f 1`
-(defparameter *python* nil)
-(defparameter *python-reading-thread* nil)
+(defparameter *wolfram* nil)
+(defparameter *wolfram-reading-thread* nil)
 
 
-(defun start-python ()
-  (unless (and *python*
-	       (eq :running (sb-impl::process-%status *python*)))
-    (setf *python*
-	  (sb-ext:run-program "python3" '()
+(defun start-wolfram ()
+  (unless (and *wolfram*
+	       (eq :running (sb-impl::process-%status *wolfram*)))
+    (setf *wolfram*
+	  (sb-ext:run-program "WolframKernel" '()
 			      :search t :wait nil
 			      :pty t))
-    (when *python-reading-thread*
-      (sb-thread:join-thread *python-reading-thread*)
-      (setf *python-reading-thread* nil))
-    (setf *python-reading-thread*
+    (when *wolfram-reading-thread*
+      (sb-thread:join-thread *wolfram-reading-thread*)
+      (setf *wolfram-reading-thread* nil))
+    (setf *wolfram-reading-thread*
 	  (sb-thread:make-thread
 	   #'(lambda (standard-output)
 	       (let ((*standard-output* standard-output))
-		 (loop for line = (read-line (sb-impl::process-pty *python*) nil 'foo)
+		 (loop for line = (read-line (sb-impl::process-pty *wolfram*) nil 'foo)
 		    until (eq line 'foo)
 		    do
 		      (print line))))
-	   :name "python-reader"
+	   :name "wolfram-reader"
 	   :arguments (list *standard-output*)))))
 
 (defun run (code)
-  (assert (eq :running (sb-impl::process-%status *python*)))
-  (let ((s (sb-impl::process-pty *python*)))
+  (assert (eq :running (sb-impl::process-%status *wolfram*)))
+  (let ((s (sb-impl::process-pty *wolfram*)))
     (write-sequence
-    (cl-py-generator::emit-py  :clear-env t
+    (cl-wolfram-generator::emit-wl  :clear-env t
 			       :code code)
     s)
    (terpri s)

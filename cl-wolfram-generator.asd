@@ -1,4 +1,4 @@
-(asdf:defsystem cl-py-generator
+(asdf:defsystem cl-wolfram-generator
     :version "0"
     :description "Emit Wolfram Language code"
     :maintainer " <kielhorn.martin@gmail.com>"

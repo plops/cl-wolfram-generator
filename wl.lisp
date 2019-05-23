@@ -7,7 +7,7 @@
 				 ignore-hash)
   (let* ((fn (merge-pathnames (format nil "~a.m" name)
 			      dir))
-	(code-str (emit-py
+	(code-str (emit-wl
 		   :clear-env t
 		   :code code))
 	(fn-hash (sxhash fn))
@@ -60,6 +60,8 @@
 		       (format nil "(~{~a,~})" (mapcar #'emit args))))
 	      (paren (let ((args (cdr code)))
 		       (format nil "(~{~a~^, ~})" (mapcar #'emit args))))
+	      (bracket (let ((args (cdr code)))
+		       (format nil "[~{~a~^, ~}]" (mapcar #'emit args))))
 	      (ntuple (let ((args (cdr code)))
 		       (format nil "~{~a~^, ~}" (mapcar #'emit args))))
 	      (list (let ((args (cdr code)))
@@ -253,7 +255,7 @@
 			      (plist (subseq args (length positional)))
 			      (props (loop for e in plist by #'cddr collect e)))
 			 (format nil "~a~a" name
-				 (emit `(paren ,@(append
+				 (emit `(bracket ,@(append
 						  positional
 						  (loop for e in props collect
 						       `(= ,(format nil "~a" e) ,(getf plist e))))))))))))
